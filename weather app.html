@@ -1,0 +1,148 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Weather App</title>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      background: linear-gradient(to right, #6dd5ed, #2193b0);
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      height: 100vh;
+      margin: 0;
+    }
+    .container {
+      background: white;
+      padding: 20px;
+      border-radius: 15px;
+      box-shadow: 0px 4px 20px rgba(0,0,0,0.2);
+      width: 320px;
+      text-align: center;
+    }
+    h2 {
+      margin-bottom: 15px;
+      color: #333;
+    }
+    input {
+      padding: 10px;
+      width: 70%;
+      border: 1px solid #ccc;
+      border-radius: 8px;
+    }
+    button {
+      padding: 10px 15px;
+      margin: 5px 2px;
+      border: none;
+      border-radius: 8px;
+      background: #2193b0;
+      color: white;
+      cursor: pointer;
+    }
+    button:hover {
+      background: #17687a;
+    }
+    .weather-icon {
+      font-size: 60px;
+      margin: 15px 0;
+      color: #2193b0;
+    }
+    .temp {
+      font-size: 40px;
+      font-weight: bold;
+      margin: 10px 0;
+    }
+    .details {
+      font-size: 16px;
+      color: #555;
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <h2><i class="fas fa-cloud-sun"></i> Weather App</h2>
+    <input type="text" id="city" placeholder="Enter city">
+    <button onclick="searchWeather()">Search</button>
+    <button onclick="getWeatherByLocation()">📍 My Location</button>
+    <div id="weather"></div>
+  </div>
+
+  <script>
+    const apiKey = "c0cef0a023eaa5886d4df87c8d3d89b5"; // ✅ Your API key
+    const weatherDiv = document.getElementById("weather");
+
+    async function getWeather(city) {
+      const url = `https://api.openweathermap.org/data/2.5/weather?q=${city}&units=metric&appid=${apiKey}`;
+
+      try {
+        const response = await fetch(url);
+        if (!response.ok) throw new Error("City not found");
+        const data = await response.json();
+
+        const icons = {
+          "Clear": "fas fa-sun",
+          "Clouds": "fas fa-cloud",
+          "Rain": "fas fa-cloud-showers-heavy",
+          "Drizzle": "fas fa-cloud-rain",
+          "Thunderstorm": "fas fa-bolt",
+          "Snow": "fas fa-snowflake",
+          "Mist": "fas fa-smog",
+          "Haze": "fas fa-smog"
+        };
+
+        const weatherCondition = data.weather[0].main;
+        const iconClass = icons[weatherCondition] || "fas fa-sun";
+
+        weatherDiv.innerHTML = `
+          <div class="weather-icon"><i class="${iconClass}"></i></div>
+          <div class="temp">${Math.round(data.main.temp)}°C</div>
+          <div class="details">
+            <p><strong>${data.name}, ${data.sys.country}</strong></p>
+            <p>${data.weather[0].description}</p>
+            <p>💨 Wind: ${data.wind.speed} m/s</p>
+            <p>💧 Humidity: ${data.main.humidity}%</p>
+          </div>
+        `;
+      } catch (error) {
+        weatherDiv.innerHTML = `<p style="color:red;">❌ ${error.message}</p>`;
+      }
+    }
+
+    function searchWeather() {
+      const city = document.getElementById("city").value;
+      if (city) getWeather(city);
+    }
+
+    function getWeatherByLocation() {
+      if (navigator.geolocation) {
+        navigator.geolocation.getCurrentPosition(async (position) => {
+          const lat = position.coords.latitude;
+          const lon = position.coords.longitude;
+
+          const url = `https://api.openweathermap.org/data/2.5/weather?lat=${lat}&lon=${lon}&units=metric&appid=${apiKey}`;
+          try {
+            const response = await fetch(url);
+            const data = await response.json();
+
+            getWeather(data.name); // Call main function with detected city
+          } catch (error) {
+            weatherDiv.innerHTML = `<p style="color:red;">❌ Unable to fetch location weather</p>`;
+          }
+        }, () => {
+          weatherDiv.innerHTML = `<p style="color:red;">❌ Location access denied</p>`;
+        });
+      } else {
+        weatherDiv.innerHTML = `<p style="color:red;">❌ Geolocation not supported</p>`;
+      }
+    }
+
+    // Auto detect on page load
+    window.onload = () => {
+      getWeatherByLocation();
+    };
+  </script>
+</body>
+</html>
